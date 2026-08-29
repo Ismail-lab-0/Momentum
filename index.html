@@ -21,6 +21,7 @@
     --miss: #b5544a;
     --miss-soft: #f7e9e7;
     --no-data: #ece9e2;
+    --other-accent: #c98a2e;
     --radius: 10px;
   }
 
@@ -48,6 +49,7 @@
       --miss: #d97a70;
       --miss-soft: #33231f;
       --no-data: #2a2822;
+      --other-accent: #d9a24a;
     }
   }
   :root[data-theme="dark"] {
@@ -68,6 +70,7 @@
     --miss: #d97a70;
     --miss-soft: #33231f;
     --no-data: #2a2822;
+    --other-accent: #d9a24a;
   }
 
   * { box-sizing: border-box; }
@@ -450,12 +453,20 @@
   .week-nav-btn:disabled { color: var(--border); cursor: default; }
   .week-nav-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
 
-  .tracker-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  /* No outer border — a hard 1px edge stood out against the darker
+     category-gap band and read as a line running between blocks. A soft
+     shadow defines the table edge instead and makes it read as floating. */
+  .tracker-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.10), 0 20px 44px rgba(0, 0, 0, 0.16);
+  }
 
   table.tracker-table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13px; }
 
   .tracker-table th, .tracker-table td {
-    padding: 8px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     border-left: 1px solid var(--border);   /* thin rule between each day column */
     text-align: center;
@@ -468,20 +479,21 @@
   .tt-day-head { min-width: 46px; font-weight: 700; color: var(--text); }
   .tt-day-head .tt-day-date { display: block; font-weight: 400; font-size: 11px; color: var(--text-muted); }
   .tt-day-head.tt-today { color: var(--target); }
-  .tt-pct-head { min-width: 48px; color: var(--text-muted); }
+  .tt-pct-head { min-width: 56px; color: var(--text-muted); white-space: nowrap; }
 
   /* full-width rows shouldn't pick up the per-column rule */
   .tt-category-row td, .tt-add-row td, .tt-edit-row td, .tt-cat-gap td { border-left: none !important; }
 
-  /* blank band of page-colour between one category block and the next */
-  .tt-cat-gap td { padding: 0; height: 20px; background: var(--bg); border-bottom: none; }
+  /* blank band of page-colour separating one category block from the next
+     — no divider lines top or bottom, just open space */
+  .tt-cat-gap td { padding: 0; height: 30px; background: var(--bg); border-bottom: none; border-top: none; }
 
   .tt-category-row td {
     text-align: left;
     background: color-mix(in srgb, var(--cat-color, var(--text-muted)) 18%, var(--surface));
     font-weight: 700;
-    padding: 11px 10px 10px;
-    border-top: 2px solid color-mix(in srgb, var(--cat-color, var(--text-muted)) 55%, transparent);
+    padding: 13px 12px;
+    border-top: none;
     border-bottom: 1px solid var(--border);
   }
   .tt-cat-name { color: var(--cat-color, var(--text)); font-size: 14px; letter-spacing: 0.2px; }
@@ -515,7 +527,7 @@
 
   .tt-pct-cell { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
-  .tt-add-row td { text-align: left; padding: 6px 10px; }
+  .tt-add-row td { text-align: left; padding: 8px 12px; border-bottom: none; }
   .tt-add-row button { border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; }
   .tt-add-row button:hover { color: var(--text); }
 
@@ -547,10 +559,28 @@
   .today-group.nonneg .today-group-title::before { content: "\2605"; margin-right: 6px; font-size: 12px; line-height: 1; }
   .today-group.nonneg .today-group-count { color: color-mix(in srgb, var(--target) 70%, var(--text-muted)); font-weight: 800; }
   .today-group.nonneg .today-task-name { font-weight: 600; }
-  .today-group.nonneg .today-task-item:not(.done):not(.today-task-off) .today-task-dot {
+  .today-group.nonneg .today-task-item:not(.done) .today-task-dot {
     border-color: color-mix(in srgb, var(--target) 50%, var(--border));
   }
   .today-group.nonneg .dash-group-pct { color: var(--target); }
+
+  /* "Other tasks" gets its own boxed card too — a light-orange counterpart
+     to the non-negotiables, one step down in emphasis (no ★, thinner
+     accent) so the hierarchy still reads. */
+  .today-group.other {
+    background: color-mix(in srgb, var(--other-accent) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--other-accent) 24%, var(--border));
+    border-left: 3px solid var(--other-accent);
+    border-radius: var(--radius);
+    padding: 11px 13px;
+  }
+  .today-group.other .today-group-title { color: var(--other-accent); }
+  .today-group.other .today-group-count { color: color-mix(in srgb, var(--other-accent) 70%, var(--text-muted)); font-weight: 800; }
+  .today-group.other .today-task-item:not(.done) .today-task-dot {
+    border-color: color-mix(in srgb, var(--other-accent) 50%, var(--border));
+  }
+  .today-group.other .dash-group-pct { color: var(--other-accent); }
+
   .today-task-list { display: flex; flex-direction: column; gap: 2px; }
   .today-task-item {
     display: flex;
@@ -568,6 +598,7 @@
     font-family: inherit;
   }
   .today-task-item:hover { background: var(--bg); }
+  .today-task-item:focus-visible { outline: 2px solid var(--floor); outline-offset: 1px; }
   .today-task-dot {
     flex-shrink: 0;
     width: 16px;
@@ -580,12 +611,22 @@
     font-size: 10px;
     color: #fff;
   }
+  /* a completed task is struck through and dimmed ("scratched off"); it
+     stays in the list and re-brightens on hover so it's clearly still a
+     tap target to undo. The done state is stored per calendar day, so the
+     list starts fresh again the next day on its own. */
+  .today-task-item.done { opacity: 0.6; }
+  .today-task-item.done:hover { opacity: 1; }
   .today-task-item.done .today-task-dot { background: var(--target); border-color: var(--target); }
-  .today-task-item.done .today-task-name { text-decoration: line-through; color: var(--text-muted); }
-  /* tasks shown but not actionable today */
-  .today-task-off { opacity: 0.5; cursor: default; }
-  .today-task-off:hover { background: transparent; }
-  .today-task-note { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--text-muted); }
+  .today-task-item.done .today-task-name {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    color: var(--text-muted);
+  }
+  .today-group.other .today-task-item.done .today-task-dot {
+    background: var(--other-accent);
+    border-color: var(--other-accent);
+  }
   /* per-task list under each group in a non-Today filter range */
   .dash-range-list { display: flex; flex-direction: column; gap: 1px; margin-top: 8px; }
   .dash-range-task { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 8px; }
@@ -1416,6 +1457,34 @@
     return { done: done, applicable: applicable, pct: Math.round((done / applicable) * 100) };
   }
 
+  // Accomplishment for one specific week — this is what the Input Tracker's
+  // "Week %" column shows. Denominator is EVERY day the task is scheduled
+  // in that week (the whole Mon–Sun span — days already past, today, and
+  // weekdays still to come), so marking one day done reads as "1 of 5 this
+  // week = 20%", not 100%. The per-day createdAt/archivedAt gate is
+  // deliberately dropped here: within a week the task is active for, all of
+  // that week's scheduled slots count (the same cells the grid lets you
+  // tick). Only a week lying entirely outside the task's lifetime returns
+  // null ("—"). `weekDates` is the 7 Date objects the tracker already built.
+  function computeTaskWeekAccomplishment(s, task, weekDates, todayKey) {
+    var createdKey = localDateKey(new Date(task.createdAt));
+    var archivedKey = task.archived && task.archivedAt ? localDateKey(new Date(task.archivedAt)) : null;
+    var weekStartKey = localDateKey(weekDates[0]);
+    var weekEndKey = localDateKey(weekDates[weekDates.length - 1]);
+    if (weekEndKey < createdKey) return null;            // whole week before the task existed
+    if (archivedKey && weekStartKey >= archivedKey) return null; // whole week after it was archived
+    var done = 0, scheduled = 0;
+    weekDates.forEach(function (d) {
+      var dk = localDateKey(d);
+      if (!isTaskScheduledOn(task, dk)) return; // N/A weekday — never counts
+      scheduled++;
+      var st = s.statusesByTask[task.id] && s.statusesByTask[task.id][dk];
+      if (st === "done") done++;
+    });
+    if (scheduled === 0) return null;
+    return { done: done, scheduled: scheduled, pct: Math.round((done / scheduled) * 100) };
+  }
+
   // Which bucket a single task-day falls into, or null if it isn't an entry
   // at all (before the task existed, after it was archived, or in the
   // future). "na" = the task exists that day but isn't scheduled on that
@@ -1930,7 +1999,7 @@
           class: "tt-day-head" + (dk === todayKey ? " tt-today" : "")
         }, [DAY_LABELS[d.getDay()], h("span", { class: "tt-day-date" }, formatShortDate(d))]));
       }
-      headRow.appendChild(h("th", { class: "tt-pct-head" }, "%"));
+      headRow.appendChild(h("th", { class: "tt-pct-head", title: "Done this week ÷ days scheduled this week" }, "Week %"));
       table.appendChild(h("thead", {}, headRow));
 
       var tbody = h("tbody");
@@ -1997,11 +2066,11 @@
     // status tap flashed and blocked the CSS colour transition.
     var pctCell = h("td", { class: "tt-pct-cell" });
     function paintPct() {
-      var acc = computeTaskAccomplishment(state, task, todayKey);
+      var acc = computeTaskWeekAccomplishment(state, task, weekDates, todayKey);
       pctCell.textContent = acc ? acc.pct + "%" : "—";
       pctCell.title = acc
-        ? acc.done + " of " + acc.applicable + " scheduled days done"
-        : "No scheduled day has come around yet since this task was created";
+        ? acc.done + " of " + acc.scheduled + " scheduled days this week done"
+        : "Not scheduled on any day this week";
     }
 
     weekDates.forEach(function (d) {
@@ -2110,10 +2179,9 @@
   // ---------- Dashboard ----------
 
   // Every active task, split by its nonNegotiable flag and sorted by
-  // category then order. NOT filtered to "scheduled today" — the Dashboard
-  // card shows the whole roster; renderTodayTaskList greys the ones that
-  // aren't due today. Reads/writes statusesByTask directly, same data as
-  // Input Tracker.
+  // category then order. NOT filtered to "scheduled today" here — the
+  // "Today" view filters to today's tasks in renderDashTaskCard, while the
+  // wider ranges (Week/Month/…) list every task with its % for the range.
   function todaysTasksSplit(todayKey) {
     var catOrder = {};
     state.categories.forEach(function (c) { catOrder[c.id] = c.order; });
@@ -2129,30 +2197,27 @@
     return { nonNegotiable: nonNegotiable, other: other };
   }
 
+  // Marks / unmarks the task done for `todayKey` only — it's a per-day key
+  // in statusesByTask, so tomorrow's Dashboard renders with a fresh (all
+  // un-done) list without anything being reset explicitly.
   function toggleTodayTaskDone(taskId, todayKey, currentlyDone) {
     setTaskStatus(state, taskId, todayKey, currentlyDone ? null : "done");
     render();
   }
 
-  // Today view of a task group: tasks due today are one tap from done;
-  // tasks not scheduled today still show (greyed, "not today") so nothing
-  // silently drops off the Dashboard.
+  // Today view of a task group: every task shown is scheduled today and is
+  // one tap from done (tap again to undo). Tasks not scheduled today are
+  // left off entirely (the caller pre-filters) — no greyed "not today" rows.
   function renderTodayTaskList(tasks, todayKey) {
-    if (tasks.length === 0) return h("p", { class: "hint small" }, "None yet.");
+    if (tasks.length === 0) return h("p", { class: "hint small" }, "Nothing scheduled today.");
     var list = h("div", { class: "today-task-list" });
     tasks.forEach(function (task) {
       var name = task.name || "(unnamed task)";
-      if (!isTaskApplicableOn(task, todayKey, todayKey)) {
-        list.appendChild(h("div", { class: "today-task-item today-task-off", title: "Not scheduled today" }, [
-          h("span", { class: "today-task-dot" }),
-          h("span", { class: "today-task-name" }, name),
-          h("span", { class: "today-task-note" }, "not today")
-        ]));
-        return;
-      }
       var isDone = derivedTaskStatus(state, task, todayKey) === "done";
       list.appendChild(h("button", {
         class: "today-task-item" + (isDone ? " done" : ""),
+        title: isDone ? "Done today — tap to undo" : "Tap to mark done for today",
+        "aria-pressed": isDone ? "true" : "false",
         onclick: function () { toggleTodayTaskDone(task.id, todayKey, isDone); }
       }, [
         h("span", { class: "today-task-dot" }, isDone ? "✓" : ""),
@@ -2277,16 +2342,22 @@
   // --- the two chart cards ---
 
   function renderEntryPieCard(stats) {
-    var t = stats.totals;
+    // Denominator is every scheduled task-entry in the range (up to today),
+    // not just the ones logged — so with nothing done the ring is 100%
+    // "Not done", and it fills toward "Done" as habits get checked off.
+    // "Not done" here folds in both explicit Not-Done marks and still-To-Do
+    // entries; N/A days (task not scheduled) never count.
+    var total = stats.applicable;
+    var doneN = stats.done;
+    var notDoneN = total - doneN;
     var parts = [
-      { label: "Done", value: t.done, color: "var(--target)" },
-      { label: "Not done", value: t.not_done, color: "var(--miss)" }
+      { label: "Done", value: doneN, color: "var(--target)" },
+      { label: "Not done", value: notDoneN, color: "var(--miss)" }
     ];
-    var total = t.done + t.not_done; // only logged entries — To-do / N/A excluded
     var card = h("div", { class: "dash-card" });
     card.appendChild(h("div", { class: "dash-card-title" }, "Done vs not done — overall"));
     if (total === 0) {
-      card.appendChild(h("p", { class: "hint small" }, "Nothing logged in this range."));
+      card.appendChild(h("p", { class: "hint small" }, "Nothing scheduled in this range."));
       return card;
     }
     var legend = h("div", { class: "dash-legend" });
@@ -2299,7 +2370,7 @@
       ]));
     });
     card.appendChild(h("div", { class: "dash-pie-body" }, [
-      renderDonut(parts, Math.round((t.done / total) * 100) + "%", "done"),
+      renderDonut(parts, (stats.pct != null ? stats.pct : 0) + "%", "done"),
       legend
     ]));
     return card;
@@ -2346,25 +2417,27 @@
     var split = todaysTasksSplit(todayKey);
 
     if (range.mode === "today") {
-      var nnToday = split.nonNegotiable.filter(function (t) { return isTaskApplicableOn(t, todayKey, todayKey); });
+      var applicableToday = function (t) { return isTaskApplicableOn(t, todayKey, todayKey); };
+      var nnToday = split.nonNegotiable.filter(applicableToday);
+      var otherToday = split.other.filter(applicableToday);
       var nnDone = nnToday.filter(function (t) { return derivedTaskStatus(state, t, todayKey) === "done"; }).length;
       card.appendChild(h("div", { class: "today-card-title" }, "Today · " + formatFriendlyDate(new Date())));
       card.appendChild(h("div", { class: "today-groups" }, [
         h("div", { class: "today-group nonneg" }, [
           groupTitle("Non-negotiable", nnToday.length ? nnDone + "/" + nnToday.length : ""),
-          renderTodayTaskList(split.nonNegotiable, todayKey)
+          renderTodayTaskList(nnToday, todayKey)
         ]),
-        h("div", { class: "today-group" }, [
+        h("div", { class: "today-group other" }, [
           groupTitle("Other tasks", ""),
-          renderTodayTaskList(split.other, todayKey)
+          renderTodayTaskList(otherToday, todayKey)
         ])
       ]));
       return card;
     }
 
-    function group(label, g, tasks, nonneg) {
+    function group(label, g, tasks, variant) {
       var pct = g.applicable ? Math.round((g.done / g.applicable) * 100) : null;
-      return h("div", { class: "today-group" + (nonneg ? " nonneg" : "") }, [
+      return h("div", { class: "today-group " + variant }, [
         groupTitle(label, ""),
         h("div", { class: "dash-group-pct" }, pct != null ? pct + "%" : "—"),
         h("div", { class: "dash-group-sub" }, g.applicable ? g.done + " of " + g.applicable + " done" : "Nothing scheduled in range"),
@@ -2374,8 +2447,8 @@
     }
     card.appendChild(h("div", { class: "today-card-title" }, "Task completion · " + range.label));
     card.appendChild(h("div", { class: "today-groups" }, [
-      group("Non-negotiable", stats.byGroup.nonneg, split.nonNegotiable, true),
-      group("Other tasks", stats.byGroup.other, split.other, false)
+      group("Non-negotiable", stats.byGroup.nonneg, split.nonNegotiable, "nonneg"),
+      group("Other tasks", stats.byGroup.other, split.other, "other")
     ]));
     return card;
   }

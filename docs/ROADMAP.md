@@ -39,8 +39,10 @@ placeholder stubs), since Phases 1–4 were approved together.
   text only. Tapping a day cell cycles To-Do → Done → Not Done → To-Do;
   N/A cells (outside a task's schedule) and future-day cells aren't
   clickable.
-- Per-task rolling accomplishment % shown on every row. The grid shows
-  only a task's name and its per-day status.
+- Per-task % shown on every row (a "Week %" column: done ÷ scheduled days
+  for the displayed week — see Post-launch revisions; originally an
+  all-time rolling %). The grid shows only a task's name and its per-day
+  status.
 - Each task can be flagged non-negotiable in its edit strip, driving which
   group it falls into on the Dashboard's Today card (added post-launch,
   see below) — no effect on tracking logic itself.
@@ -336,7 +338,16 @@ phase's worth of new features:
   band (`.tt-cat-gap` row, `renderTracker` inserts one before each
   category after the first) plus a heavier category header (accent-colour
   top border, stronger tint, larger name). Visual only — no data or task
-  fields touched.
+  fields touched. *Later tweak:* cell padding bumped to `10px 12px`, the
+  gap band widened to 30px, and every divider line around it removed — the
+  category header's accent `border-top`, the add-row's `border-bottom`,
+  and the gap row's own borders — so category blocks sit in open space
+  with no line running between one and the next; the tinted header band
+  alone carries the grouping. The `.tracker-wrap`'s hard 1px outer
+  `border` was then also dropped (in dark mode it stood out sharply where
+  it crossed the darker gap band, reading as a vertical line joining the
+  blocks) and replaced with a soft `box-shadow` (faint 1px dark rim +
+  blurred drop) so the whole table reads as a floating card.
 - **Goals horizons laid out as columns, not stacked rows.** The three
   `renderHorizonSection` blocks are wrapped in a `.horizon-columns` flex
   row (`renderGoals`); each `.horizon-section` is `flex: 1 1 240px`, wraps,
@@ -388,13 +399,19 @@ phase's worth of new features:
   dropdown (`.dash-menu`, closed by a transparent full-screen backdrop) —
   the five options aren't all shown at once; Custom then reveals the two
   date inputs beside the trigger.
-- **Dashboard shows every task, not just today's.** The Non-negotiable /
-  Other card was filtered to tasks scheduled *today*, so a non-negotiable
-  task not due today (and, on a non-Today filter, every individual task)
-  seemed to vanish. `todaysTasksSplit` now returns all active tasks;
-  `renderTodayTaskList` greys the not-due-today ones ("not today"), and
-  the non-Today range card adds a per-task `%` list (`renderRangeTaskList`
-  + a new `stats.byTaskId` from `computeRangeStats`).
+- **Dashboard task card: complete for wide ranges, today-only for Today.**
+  Originally the Non-negotiable / Other card was filtered to tasks
+  scheduled *today* on every range, so on a Week/Month/… filter individual
+  tasks seemed to vanish. First fix: `todaysTasksSplit` returns all active
+  tasks, the non-Today range card gained a per-task `%` list
+  (`renderRangeTaskList` + `stats.byTaskId` from `computeRangeStats`), and
+  `renderTodayTaskList` showed the not-due-today tasks greyed ("not
+  today"). Follow-up (per request "if it's not today, don't put it on the
+  dashboard"): the greyed rows were dropped — on the **Today** filter each
+  group now lists only tasks scheduled today (`renderDashTaskCard`
+  pre-filters with `isTaskApplicableOn`); `renderTodayTaskList` lost its
+  "not today" branch and the `.today-task-off` / `.today-task-note` CSS.
+  Wide ranges still list every task that applied during the range.
 - **Input Tracker weeks start Monday, day columns kept plain.**
   `getWeekInfo` flipped from Sunday-start to Monday-start (so the Tracker
   week view + the Dashboard "Week" filter now match the Calendar). The
@@ -417,6 +434,46 @@ phase's worth of new features:
   (`.today-group-count`) pinned right. "Other tasks" stays a plain list so
   the contrast carries the hierarchy. No new palette — just existing
   `--target` tokens.
+- **"Other tasks" boxed too, in orange.** Follow-up to the above: `.today-
+  group.other` now gets the same card treatment as `.nonneg` — tinted
+  background, 3px left accent, colored heading/`%`/`count` — but keyed to a
+  new `--other-accent` token (light `#c98a2e`, dark `#d9a24a`, added to all
+  three `:root` blocks) and with no ★ and a slightly softer tint, so the
+  non-negotiables still out-rank it visually. The `group()` helper's
+  `nonneg` boolean became a `variant` string (`"nonneg"` / `"other"`).
+  Tasks in the Other card stay one-tap `<button>`s on the Today filter,
+  same as before.
+- **Dashboard task completion made unmistakable.** The Today-filter task
+  rows in both cards were already tap-to-toggle `<button>`s writing
+  `statusesByTask[id][todayKey]`, but the done state was too quiet. Now a
+  completed row dims to 60% opacity, strikes the name through at 2px, and
+  re-brightens on hover to signal it's still tappable to undo; the filled
+  checkbox picks up the card's accent (green / orange). Added `title`
+  ("Tap to mark done for today" / "Done today — tap to undo"),
+  `aria-pressed`, and a `:focus-visible` outline. No logic change — because
+  the status is keyed to the local date, the list re-initialises to all
+  un-done at the next day's first render with nothing to reset.
+- **Two "% out of what's scheduled, not what's logged" fixes.**
+  (1) The Dashboard donut ("Done vs not done — overall") stopped using the
+  logged-only denominator (`done + not_done`) — with one habit checked and
+  the rest untouched it read 100%. It now uses `stats.applicable` as the
+  total and `applicable − done` as "Not done" (folding in still-To-Do
+  entries), so a fresh range is 100% Not Done and fills toward Done as
+  habits are completed; the ring now agrees with the headline %. N/A still
+  excluded; the separate To-Do slice stays gone.
+  (2) The Input Tracker's per-row % was the all-time rolling
+  `computeTaskAccomplishment`, whose denominator excludes future days — so
+  early in a week the one logged day made it 100%. New
+  `computeTaskWeekAccomplishment(s, task, weekDates, todayKey)` divides
+  done days in the *shown* week by the task's scheduled days across that
+  whole Mon–Sun week (upcoming weekdays included); the column header is now
+  "Week %". `computeTaskAccomplishment` stays for rate-linked goals only.
+  Follow-up: the per-day `createdAt` / `archivedAt` gate was then dropped
+  from the denominator too — a habit added mid-week and ticked once was
+  still showing 100% because that day was the only "counted" slot. Now
+  every scheduled slot in a week the task is active for counts (matching
+  the cells the grid lets you tick); only a week lying entirely outside
+  the task's lifetime returns "—".
 - **Made responsive for phone and tablet.** Almost entirely CSS; the only
   JS is a new `renderTopBar()` that emits a phone-only masthead (hidden by
   CSS at wider widths). Breakpoints: at `≤900px` the main padding tightens

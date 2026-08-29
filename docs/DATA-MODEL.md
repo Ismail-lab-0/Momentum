@@ -406,12 +406,26 @@ denominator. Every scheduled day is treated identically here — there is no
 day-of-week that gets excluded from this math (an earlier version had a
 weekly "flex day" that did; see Removed: flex day, below).
 
-### Per-task accomplishment %
-`(count of applicable dates where stored status = "done") / (count of
-applicable dates)`, from `T.createdAt` through today. Shown on every Input
-Tracker row; recomputed live, not cached. A task with zero applicable dates
-yet (created today, or every applicable day so far is still in the future)
-shows no percentage rather than a misleading 0% or 100%.
+### Per-task week % (Input Tracker "Week %" column)
+`computeTaskWeekAccomplishment(s, task, weekDates, todayKey)`:
+`(done days in the displayed week) / (days the task is scheduled in that
+week)`. The denominator is **every day of the whole Mon–Sun week whose
+weekday is in `scheduledDays`** — days already past, today, and weekdays
+still to come alike. It is *not* clipped to today and there is *no*
+per-day `createdAt` / `archivedAt` gate: within a week the task is active
+for, all of that week's scheduled slots count (the same cells the grid
+lets you tick), so one day ticked on a 5-day-a-week habit reads 1 / 5 =
+20%, never 100%. N/A days (weekday not in `scheduledDays`) never count.
+Returns `null` (rendered "—") only when the task is scheduled on no day of
+that week, or the **entire** week lies before `createdAt` / on-or-after
+`archivedAt`. Recomputed live per displayed week; navigating weeks re-runs
+it for the new span.
+
+An older **all-time** rolling accomplishment % —
+`computeTaskAccomplishment(s, task, todayKey)`, `done / applicable` from
+`createdAt` through today, `null` until a scheduled day has passed — is
+still computed, but only for rate-linked goals (see "Short-term goal
+progress" above). It is no longer shown in the tracker.
 
 ### Per-category accomplishment %
 Same **pooled** ratio (a task with more applicable days weighs more), now
@@ -443,10 +457,12 @@ future is **not an entry at all** (not even `na`). It returns per-range
 totals, `byCat[]` / `byCatId{}`, a `byGroup` split (non-negotiable vs
 other) and `byTaskId{}`. `applicable = done + not_done + todo`; the
 headline / KPI / bar **% = done / applicable** (NA and unlogged-but-due
-days count against you). The **donut** ("Done vs not done — overall") uses
-a narrower denominator — just `done + not_done`, the *logged* entries — so
-its two slices answer "of the days you recorded, how often did you do it";
-`todo` and `na` are not shown there at all.
+days count against you). The **donut** ("Done vs not done — overall") now
+uses that *same* denominator: `Done = done`, `Not done = applicable −
+done` (i.e. `not_done + todo` folded together), `total = applicable`. So
+with nothing done it is 100% Not Done and fills toward Done as entries are
+checked off — it agrees with the headline % by construction. `na` is still
+never shown; there is no separate `todo` slice.
 
 ### Per-category streak
 The **current** streak — consecutive **applicable-and-relevant** days,
@@ -475,13 +491,15 @@ custom range for those views. Weeks, where the filter uses them, are
 **Monday-start** (`getWeekInfo`), consistent with the Input Tracker and
 the Calendar.
 
-### Dashboard task card — every task, every range
-`renderDashTaskCard` shows the full Non-negotiable / Other split of **all
-active tasks** (`todaysTasksSplit`, no longer filtered to "scheduled
-today"). On the `today` filter, tasks due today are one-tap checkboxes and
-the rest render greyed ("not today") — nothing silently drops off. On any
-other range, each group shows its pooled % + bar plus a per-task list
-(`renderRangeTaskList`, reading `stats.byTaskId` from `computeRangeStats`).
+### Dashboard task card
+`renderDashTaskCard` renders the Non-negotiable / Other split. On the
+`today` filter, each group lists **only the tasks scheduled today** — the
+card pre-filters `todaysTasksSplit`'s rosters with `isTaskApplicableOn`,
+and each row is a one-tap checkbox. Tasks not scheduled today are left off
+(no greyed "not today" rows). On any wider range, `todaysTasksSplit`'s
+unfiltered rosters are used: each group shows its pooled % + bar plus a
+per-task list (`renderRangeTaskList`, reading `stats.byTaskId` from
+`computeRangeStats`) covering every task that applied during the range.
 
 ### Removed: flex day
 This categorized-tracker design originally carried over the first design's

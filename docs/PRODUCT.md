@@ -50,16 +50,24 @@ content, not standalone configuration:
    *everything* below it; it defaults to Today and is remembered across
    sessions.
    Under it: a one-line completion headline for the range, then a
-   **Non-negotiable / Other** card listing *every* active task in each
-   group — on the Today filter the ones due today are one tap from done
-   and the rest show greyed ("not today"); on any other range each group
-   shows its completion stats plus a per-task % list. The **non-negotiable
-   group is visually set apart** — a ★-marked, accent-bordered panel with
-   a done/total tally — so the must-dos read as commitments, not just
-   another list. Then two charts — a
-   **donut** of Done vs Not Done (logged days only — To-do and N/A aren't
-   shown) and a **per-category bar** of done-vs-not — and a per-category
-   grid showing
+   **Non-negotiable / Other** card. On the Today filter each group lists
+   only the tasks scheduled for today, one tap from done — tasks not due
+   today are simply left off, not shown greyed. On any other range each
+   group lists every task that applied during it, with its completion
+   stats and a per-task % list. **Both groups are boxed cards**: the
+   non-negotiable one is a ★-marked green panel with a done/total tally so
+   the must-dos read as commitments; "Other tasks" is a lighter
+   orange-accented card one step down in emphasis. On the Today filter,
+   each task in either card is one tap from done — tapping fills its
+   checkbox and strikes the name through ("scratched off"), tapping again
+   undoes it. Completion is stored per calendar day, so the list starts
+   fresh the next day on its own. Then two charts — a
+   **donut** of Done vs Not Done, taken over *every* scheduled task-entry
+   in the range (not just the ones logged): with nothing done yet it reads
+   100% Not Done and fills toward Done as habits get checked off. "Not
+   Done" folds in both explicit Not-Done marks and still-To-Do entries;
+   N/A days never count. Beside it a **per-category bar** of done-vs-not —
+   and a per-category grid showing
    that category's completion % for the range plus its current streak.
    The streak is the only figure that always reads "now", not the range.
    Aside from the Today list's taps, the Dashboard is read-only.
@@ -156,10 +164,15 @@ tap:
 
 ## Accomplishment %, streaks, and completion scores
 
-- **Per-task accomplishment %** (shown on every row in Input Tracker): Done
-  days ÷ applicable days, where applicable excludes N/A days and days that
-  haven't happened yet. It updates live as the task is used — "rolling" in
-  the sense of always current, not a fixed historical snapshot.
+- **Per-task week %** (the "Week %" column on every Input Tracker row):
+  Done days ÷ days the task is scheduled *in the week currently shown* —
+  the whole Mon–Sun span, including weekdays still to come, so the figure
+  reads as progress through that week rather than jumping to 100% off the
+  one day logged so far. N/A days never count. Navigating to another week
+  recomputes it for that week; it shows "—" for a week the task isn't
+  scheduled on any day (or predates its creation). (A separate all-time
+  rolling accomplishment % is still computed internally for rate-linked
+  goals — see Goals — but is no longer shown in the tracker.)
 - **Per-category streak** (shown on the Dashboard): consecutive days, most
   recent backward, on which every applicable task in that category was
   Done. N/A days are transparent — they neither extend nor break the
