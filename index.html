@@ -1824,7 +1824,8 @@
 
   var trackerWeekStart = null;   // Date (Sunday), lazily defaulted to the current week
   var editingCategoryId = null;  // which category's inline edit strip is open
-  var editingTaskId = null;      // which task's inline edit strip is open
+  var editingTaskId = null;      // id of the task whose Edit popup is open, else null
+  var creatingTaskCatId = null;  // category id while the "Add task" popup is open, else null
   var editingBlockId = null;     // id of the Calendar block whose Edit popup is open, else null
   var creatingBlock = false;     // true while the "Add block" popup is open
   var editingGoalId = null;      // id of the goal whose Edit popup is open, else null
@@ -1862,6 +1863,14 @@
       var editBlock = state.scheduleBlocks.find(function (b) { return b.id === editingBlockId; });
       if (editBlock) appEl.appendChild(renderBlockEditModal(editBlock));
       else editingBlockId = null;
+    } else if (creatingTaskCatId) {
+      var newTaskCat = state.categories.find(function (c) { return c.id === creatingTaskCatId; });
+      if (newTaskCat) appEl.appendChild(renderTaskCreateModal(newTaskCat));
+      else creatingTaskCatId = null;
+    } else if (editingTaskId) {
+      var editTask = state.tasks.find(function (t) { return t.id === editingTaskId; });
+      if (editTask) appEl.appendChild(renderTaskEditModal(editTask));
+      else editingTaskId = null;
     }
   }
 
@@ -2021,16 +2030,11 @@
 
         tasks.forEach(function (task) {
           tbody.appendChild(renderTaskRow(task, cat, weekDates, todayKey));
-          if (editingTaskId === task.id) tbody.appendChild(renderTaskEditStrip(task));
         });
 
         var addTaskRow = h("tr", { class: "tt-add-row" });
         addTaskRow.appendChild(h("td", { colspan: "9" }, h("button", {
-          onclick: function () {
-            var t = addTask(state, cat.id);
-            editingTaskId = t.id;
-            render();
-          }
+          onclick: function () { creatingTaskCatId = cat.id; render(); }
         }, "+ Add task to " + (cat.name || "this category"))));
         tbody.appendChild(addTaskRow);
       });
@@ -2057,7 +2061,7 @@
     var nameCell = h("td", { class: "tt-task-name", style: "--cat-color:" + category.color + ";" }, [
       task.nonNegotiable ? h("span", { class: "tt-nn-mark", title: "Non-negotiable" }, "⭐") : null,
       task.name || "(unnamed task)",
-      h("button", { class: "icon-btn", onclick: function () { editingTaskId = editingTaskId === task.id ? null : task.id; render(); } }, "✎")
+      h("button", { class: "icon-btn", title: "Edit task", onclick: function () { editingTaskId = task.id; render(); } }, "✎")
     ]);
     row.appendChild(nameCell);
 
@@ -2146,34 +2150,107 @@
     return row;
   }
 
-  function renderTaskEditStrip(task) {
-    var row = h("tr", { class: "tt-edit-row" });
-    var form = h("div", { class: "tt-edit-form" });
-
-    form.appendChild(h("div", { class: "tt-edit-form-row" }, [
-      h("input", { type: "text", value: task.name, placeholder: "Task name", oninput: function (e) { updateTaskField(state, task.id, "name", e.target.value); } })
-    ]));
-    form.appendChild(h("div", { class: "hint small" }, "Scheduled days:"));
-    form.appendChild(renderDayPicker(task.scheduledDays, function (idx) { toggleTaskScheduledDay(state, task.id, idx); }));
-
-    var nnBtn = h("button", {
-      class: "mode-btn" + (task.nonNegotiable ? " active" : ""),
+  // A non-negotiable toggle chip (used by both task popups). `getState` /
+  // `onFlip` keep it working against either a live task field or a draft.
+  function taskNonNegChip(initial, onFlip) {
+    var on = initial;
+    var chip = h("button", {
+      class: "mode-btn" + (on ? " active" : ""),
       title: "Show this task in the Dashboard's Non-negotiable group",
       onclick: function () {
-        updateTaskField(state, task.id, "nonNegotiable", !task.nonNegotiable);
-        nnBtn.classList.toggle("active", task.nonNegotiable);
-        nnBtn.textContent = task.nonNegotiable ? "⭐ Non-negotiable" : "☆ Mark as non-negotiable";
+        on = !on;
+        onFlip(on);
+        chip.classList.toggle("active", on);
+        chip.textContent = on ? "⭐ Non-negotiable" : "☆ Mark as non-negotiable";
       }
-    }, task.nonNegotiable ? "⭐ Non-negotiable" : "☆ Mark as non-negotiable");
-    form.appendChild(nnBtn);
+    }, on ? "⭐ Non-negotiable" : "☆ Mark as non-negotiable");
+    return chip;
+  }
 
-    form.appendChild(h("div", { class: "tt-edit-form-row" }, [
-      h("button", { class: "icon-btn", onclick: function () { archiveTask(state, task.id); editingTaskId = null; render(); } }, "Archive task"),
-      h("button", { class: "icon-btn", onclick: function () { editingTaskId = null; render(); } }, "Done")
-    ]));
+  // "+ Add task to <category>" opens this. Draft values live only in this
+  // closure until "＋ Add task" is pressed — Cancel / ✕ / backdrop / Escape
+  // close without creating anything.
+  function renderTaskCreateModal(category) {
+    var draft = { days: [0, 1, 2, 3, 4, 5, 6], nonNegotiable: false };
+    function close() { closeModal(function () { creatingTaskCatId = null; render(); }); }
 
-    row.appendChild(h("td", { colspan: "9" }, form));
-    return row;
+    var nameInput = h("input", { type: "text", placeholder: "Task name" });
+
+    function toggleDraftDay(idx) {
+      var i = draft.days.indexOf(idx);
+      if (i === -1) draft.days.push(idx);
+      else if (draft.days.length > 1) draft.days.splice(i, 1);
+      draft.days.sort(function (a, b) { return a - b; });
+    }
+    var nnChip = taskNonNegChip(false, function (on) { draft.nonNegotiable = on; });
+
+    function submit() {
+      var name = nameInput.value.trim();
+      if (!name) { alert("Give the task a name first."); nameInput.focus(); return; }
+      var t = addTask(state, category.id);
+      t.name = name;
+      t.scheduledDays = draft.days.slice();
+      t.nonNegotiable = draft.nonNegotiable;
+      saveState(state);
+      close();
+    }
+
+    var dialog = h("div", { class: "modal-dialog", style: "--hz-color:" + category.color + ";" }, [
+      h("div", { class: "modal-head" }, [
+        h("div", { class: "modal-title" }, "Add task"),
+        h("button", { class: "icon-btn", title: "Cancel", onclick: close }, "✕")
+      ]),
+      h("div", { class: "modal-body" }, [].concat(
+        modalField("Name", nameInput),
+        modalField("Scheduled days", renderDayPicker(draft.days, toggleDraftDay)),
+        modalField("Grouping", nnChip)
+      )),
+      h("div", { class: "modal-actions" }, [
+        h("button", { class: "secondary-btn", onclick: close }, "Cancel"),
+        h("button", { class: "modal-primary", onclick: submit }, "＋ Add task")
+      ])
+    ]);
+
+    var overlay = modalOverlay(dialog, close);
+    setTimeout(function () { nameInput.focus(); }, 0);
+    return overlay;
+  }
+
+  // The ✎ next to a task name opens this. Every field autosaves (like the
+  // Calendar block popup), so "Done" just closes; "Archive task" removes
+  // it from the tracker.
+  function renderTaskEditModal(task) {
+    var category = state.categories.find(function (c) { return c.id === task.categoryId; });
+    var accent = category ? category.color : "var(--target)";
+    function close() { closeModal(function () { editingTaskId = null; render(); }); }
+
+    var nameInput = h("input", {
+      type: "text", placeholder: "Task name", value: task.name,
+      oninput: function (e) { updateTaskField(state, task.id, "name", e.target.value); }
+    });
+    var nnChip = taskNonNegChip(task.nonNegotiable, function (on) {
+      updateTaskField(state, task.id, "nonNegotiable", on);
+    });
+
+    var dialog = h("div", { class: "modal-dialog", style: "--hz-color:" + accent + ";" }, [
+      h("div", { class: "modal-head" }, [
+        h("div", { class: "modal-title" }, "Edit task"),
+        h("button", { class: "icon-btn", title: "Done", onclick: close }, "✕")
+      ]),
+      h("div", { class: "modal-body" }, [].concat(
+        modalField("Name", nameInput),
+        modalField("Scheduled days", renderDayPicker(task.scheduledDays, function (idx) { toggleTaskScheduledDay(state, task.id, idx); })),
+        modalField("Grouping", nnChip)
+      )),
+      h("div", { class: "modal-actions spread" }, [
+        h("button", { class: "icon-btn", onclick: function () { closeModal(function () { archiveTask(state, task.id); editingTaskId = null; render(); }); } }, "Archive task"),
+        h("button", { class: "modal-primary", onclick: close }, "Done")
+      ])
+    ]);
+
+    var overlay = modalOverlay(dialog, close);
+    setTimeout(function () { nameInput.focus(); }, 0);
+    return overlay;
   }
 
   // ---------- Dashboard ----------

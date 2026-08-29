@@ -39,9 +39,12 @@ on phones, moves to a fixed bottom navigation bar with a matching top app
 bar above the content — centered logo, light/dark/auto toggle on the
 right. The layout is responsive from phone through desktop. There's no
 separate Setup section this time —
-category and task management (add/rename/reorder/archive) happens directly
-inline within Input Tracker, since categories and tasks are that screen's
-content, not standalone configuration:
+category and task management (add/rename/reorder/archive) lives on the
+Input Tracker screen itself, since categories and tasks are that screen's
+content, not standalone configuration. Categories are edited via an inline
+strip under the category header; tasks are created and edited in a small
+popup (name, scheduled days, non-negotiable toggle) opened from the
+"+ Add task" row or the ✎ next to a task name:
 
 1. **Dashboard** — the app's home screen (what's open first, every time).
    The at-a-glance overview. A compact **time filter** at the top — a

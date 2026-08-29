@@ -43,9 +43,10 @@ placeholder stubs), since Phases 1–4 were approved together.
   for the displayed week — see Post-launch revisions; originally an
   all-time rolling %). The grid shows only a task's name and its per-day
   status.
-- Each task can be flagged non-negotiable in its edit strip, driving which
-  group it falls into on the Dashboard's Today card (added post-launch,
-  see below) — no effect on tracking logic itself.
+- Each task can be flagged non-negotiable in its edit popup (originally an
+  inline edit strip — see Post-launch revisions), driving which group it
+  falls into on the Dashboard's Today card (added post-launch, see below) —
+  no effect on tracking logic itself.
 - Persistence to `localStorage` under `momentum:v2`, per
   `docs/DATA-MODEL.md`.
 
@@ -501,6 +502,18 @@ phase's worth of new features:
   width, where the sidebar already carries both the brand and the theme
   toggle, so there is never a duplicate. Purely presentational: it reuses
   the existing `theme` state and `cycleTheme()`.
+- **Task create/edit moved from an inline strip to a popup.**
+  `renderTaskEditStrip` (a full-width `<tr>` that expanded under the task
+  row) was replaced by two modals reusing the shared modal system
+  (`modalOverlay` / `closeModal` / `modalField`): `renderTaskCreateModal`
+  (drafts name / scheduled days / non-negotiable in-closure, only calls
+  `addTask` on "＋ Add task" — Cancel / ✕ / backdrop / Escape create
+  nothing, so no more empty orphan task if you back out) and
+  `renderTaskEditModal` (autosaves every field like the Calendar block
+  popup; "Archive task" / "Done"). New `creatingTaskCatId` state var
+  alongside `editingTaskId`; the dialog's top edge takes the category's
+  colour. Category editing stays the inline strip. Mirrors the earlier
+  Calendar-block and Goal moves to popups.
 
 ## Explicitly not planned
 
